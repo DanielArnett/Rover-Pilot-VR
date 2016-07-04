@@ -22,7 +22,7 @@ public class MjpegProcessor {
     }
 
     // WinForms & WPF
-    public Bitmap Bitmap { get; set; }
+    public Bitmap bitmap { get; set; }
     // magic 2 byte header for JPEG images
     private readonly byte[] JpegHeader = new byte[] { 0xff, 0xd8 };
     // pull down 1024 bytes at a time
@@ -35,6 +35,9 @@ public class MjpegProcessor {
     //public BitmapImage BitmapImage { get; set; }
     // used to marshal back to UI thread
     private SynchronizationContext _context;
+
+    public Bitmap aBitmap = null;
+    public byte[] latestFrame = null;
 
     // event to get the buffer above handed to you
     public event EventHandler<FrameReadyEventArgs> FrameReady;
@@ -109,11 +112,15 @@ public class MjpegProcessor {
         {
             print("OnGetResponse try entered.");
             HttpWebResponse resp = (HttpWebResponse)req.EndGetResponse(asyncResult);
-
+            print("response received");
             // find our magic boundary value
             string contentType = resp.Headers["Content-Type"];
             if (!string.IsNullOrEmpty(contentType) && !contentType.Contains("="))
+            {
+                print("MJPEG Exception thrown");
                 throw new Exception("Invalid content-type header.  The camera is likely not returning a proper MJPEG stream.");
+            }
+
             string boundary = resp.Headers["Content-Type"].Split('=')[1].Replace("\"", "");
             byte[] boundaryBytes = Encoding.UTF8.GetBytes(boundary.StartsWith("--") ? boundary : "--" + boundary);
 
@@ -150,7 +157,10 @@ public class MjpegProcessor {
 
                             byte[] frame = new byte[size];
                             Array.Copy(imageBuffer, 0, frame, 0, size);
-
+                            // create a simple GDI+ happy Bitmap
+                            aBitmap = new Bitmap(new MemoryStream(frame));
+                            latestFrame = frame;
+                            //bitmap.Save("c:\\frame.gif", System.Drawing.Imaging.ImageFormat.Gif);
                             //ProcessFrame(frame);
                             // copy the leftover data to the start
                             Array.Copy(buff, imageEnd, buff, 0, buff.Length - imageEnd);
