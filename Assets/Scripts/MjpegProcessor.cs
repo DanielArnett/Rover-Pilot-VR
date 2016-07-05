@@ -10,17 +10,6 @@ using System.Windows.Media.Imaging;*/
 using System.Drawing;
 
 public class MjpegProcessor {
-
-    // Use this for initialization
-    void Start() {
-
-    }
-
-    // Update is called once per frame
-    void Update() {
-
-    }
-
     // WinForms & WPF
     public Bitmap bitmap { get; set; }
     // magic 2 byte header for JPEG images
@@ -35,8 +24,6 @@ public class MjpegProcessor {
     //public BitmapImage BitmapImage { get; set; }
     // used to marshal back to UI thread
     private SynchronizationContext _context;
-
-    public Bitmap aBitmap = null;
     public byte[] latestFrame = null;
 
     // event to get the buffer above handed to you
@@ -158,12 +145,15 @@ public class MjpegProcessor {
                             byte[] frame = new byte[size];
                             Array.Copy(imageBuffer, 0, frame, 0, size);
                             // create a simple GDI+ happy Bitmap
-                            aBitmap = new Bitmap(new MemoryStream(frame));
-                            latestFrame = frame;
-                            //bitmap.Save("c:\\frame.gif", System.Drawing.Imaging.ImageFormat.Gif);
-                            //ProcessFrame(frame);
-                            // copy the leftover data to the start
-                            Array.Copy(buff, imageEnd, buff, 0, buff.Length - imageEnd);
+                            //aBitmap = new Bitmap(new MemoryStream(frame));
+                            CurrentFrame = frame;
+                            // tell whoever's listening that we have a frame to draw
+                            if (FrameReady != null)
+                                FrameReady(this, new FrameReadyEventArgs { FrameBuffer = CurrentFrame });
+                        //bitmap.Save("c:\\frame.gif", System.Drawing.Imaging.ImageFormat.Gif);
+                        //ProcessFrame(frame);
+                        // copy the leftover data to the start
+                        Array.Copy(buff, imageEnd, buff, 0, buff.Length - imageEnd);
 
                             // fill the remainder of the buffer with new data and start over
                             byte[] temp = br.ReadBytes(imageEnd);
@@ -227,7 +217,6 @@ public class MjpegProcessor {
 public class FrameReadyEventArgs : EventArgs
 {
     public byte[] FrameBuffer;
-    public Bitmap Bitmap;
     //public BitmapImage BitmapImage;
 }
 
