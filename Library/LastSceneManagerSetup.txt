@@ -1,4 +1,4 @@
 sceneSetups:
-- path: Assets/Robot Viewer.unity
+- path: C:/Users/Daniel/Documents/DomeProject/Assets/Dome Screen.unity
   isLoaded: 1
   isActive: 1

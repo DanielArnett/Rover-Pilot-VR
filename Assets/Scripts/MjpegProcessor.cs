@@ -25,6 +25,7 @@ public class MjpegProcessor {
     // used to marshal back to UI thread
     private SynchronizationContext _context;
     public byte[] latestFrame = null;
+    private bool responseReceived = false;
 
     // event to get the buffer above handed to you
     public event EventHandler<FrameReadyEventArgs> FrameReady;
@@ -45,11 +46,12 @@ public class MjpegProcessor {
 
     public void ParseStream(Uri uri, string username, string password)
     {
+        print("Parsing Stream " + uri.ToString());
         HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
         if (!string.IsNullOrEmpty(username) || !string.IsNullOrEmpty(password))
             request.Credentials = new NetworkCredential(username, password);
-
         // asynchronously get a response
+        print("Getting Response");
         request.BeginGetResponse(OnGetResponse, request);
     }
 
@@ -82,12 +84,39 @@ public class MjpegProcessor {
         // not found
         return -1;
     }
+    public static int FindBytesInReverse(byte[] buff, byte[] search)
+    {
+        // enumerate the buffer but don't overstep the bounds
+        for (int start = buff.Length - search.Length - 1; start > 0; start--)
+        {
+            // we found the first character
+            if (buff[start] == search[0])
+            {
+                int next;
+
+                // traverse the rest of the bytes
+                for (next = 1; next < search.Length; next++)
+                {
+                    // if we don't match, bail
+                    if (buff[start + next] != search[next])
+                        break;
+                }
+
+                if (next == search.Length)
+                    return start;
+            }
+        }
+        // not found
+        return -1;
+    }
+
     private void print(String str) 
     {
         Debug.Log(str);
     }
     private void OnGetResponse(IAsyncResult asyncResult)
     {
+        responseReceived = true;
         print("OnGetResponse");
         byte[] imageBuffer = new byte[1024 * 1024];
 
@@ -122,7 +151,7 @@ public class MjpegProcessor {
             while (_streamActive)
             {
                 // find the JPEG header
-                int imageStart = FindBytes(buff, JpegHeader);// buff.Find(JpegHeader);
+                int imageStart = FindBytesInReverse(buff, JpegHeader);// buff.Find(JpegHeader);
 
                 if (imageStart != -1)
                 {
@@ -135,7 +164,7 @@ public class MjpegProcessor {
                         buff = br.ReadBytes(ChunkSize);
 
                         // find the boundary text
-                        int imageEnd = FindBytes(buff, boundaryBytes);// buff.Find(boundaryBytes);
+                        int imageEnd = FindBytesInReverse(buff, boundaryBytes);// buff.Find(boundaryBytes);
                         if (imageEnd != -1)
                         {
                             // copy the remainder of the JPEG to the imageBuffer
