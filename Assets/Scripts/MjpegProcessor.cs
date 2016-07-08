@@ -150,11 +150,13 @@ public class MjpegProcessor {
 
             while (_streamActive)
             {
+                
                 // find the JPEG header
-                int imageStart = FindBytesInReverse(buff, JpegHeader);// buff.Find(JpegHeader);
+                int imageStart = FindBytes(buff, JpegHeader);// buff.Find(JpegHeader);
 
                 if (imageStart != -1)
                 {
+                    //print("Retreiving Frame");
                     // copy the start of the JPEG image to the imageBuffer
                     int size = buff.Length - imageStart;
                     Array.Copy(buff, imageStart, imageBuffer, 0, size);
@@ -163,8 +165,8 @@ public class MjpegProcessor {
                     {
                         buff = br.ReadBytes(ChunkSize);
 
-                        // find the boundary text
-                        int imageEnd = FindBytesInReverse(buff, boundaryBytes);// buff.Find(boundaryBytes);
+                        // Find the end of the jpeg
+                        int imageEnd = FindBytes(buff, boundaryBytes);
                         if (imageEnd != -1)
                         {
                             // copy the remainder of the JPEG to the imageBuffer
@@ -172,6 +174,7 @@ public class MjpegProcessor {
                             size += imageEnd;
 
                             byte[] frame = new byte[size];
+                            // Copy the latest frame into `frame`
                             Array.Copy(imageBuffer, 0, frame, 0, size);
                             // create a simple GDI+ happy Bitmap
                             //aBitmap = new Bitmap(new MemoryStream(frame));
@@ -189,6 +192,10 @@ public class MjpegProcessor {
 
                             Array.Copy(temp, 0, buff, buff.Length - imageEnd, temp.Length);
                             break;
+                            if (!_streamActive)
+                            {
+                                resp.Close();
+                            }
                         }
 
                         // copy all of the data to the imageBuffer
