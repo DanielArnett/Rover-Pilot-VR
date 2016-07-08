@@ -15,7 +15,7 @@ public class MjpegProcessor {
     // magic 2 byte header for JPEG images
     private readonly byte[] JpegHeader = new byte[] { 0xff, 0xd8 };
     // pull down 1024 bytes at a time
-    private const int ChunkSize = 1024;
+    private const int ChunkSize = 1024*50;
     // used to cancel reading the stream
     private bool _streamActive;
     // current encoded JPEG image
@@ -192,15 +192,18 @@ public class MjpegProcessor {
 
                             Array.Copy(temp, 0, buff, buff.Length - imageEnd, temp.Length);
                             break;
-                            if (!_streamActive)
-                            {
-                                resp.Close();
-                            }
                         }
 
                         // copy all of the data to the imageBuffer
                         Array.Copy(buff, 0, imageBuffer, size, buff.Length);
                         size += buff.Length;
+
+                        if (!_streamActive)
+                        {
+                            print("CLOSING");
+                            resp.Close();
+                            break;
+                        }
                     }
                 }
             }
