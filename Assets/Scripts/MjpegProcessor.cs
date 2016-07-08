@@ -150,7 +150,7 @@ public class MjpegProcessor {
 
             while (_streamActive)
             {
-                
+                print("Receiving Frame");
                 // find the JPEG header
                 int imageStart = FindBytes(buff, JpegHeader);// buff.Find(JpegHeader);
 
@@ -173,19 +173,15 @@ public class MjpegProcessor {
                             Array.Copy(buff, 0, imageBuffer, size, imageEnd);
                             size += imageEnd;
 
-                            byte[] frame = new byte[size];
-                            // Copy the latest frame into `frame`
-                            Array.Copy(imageBuffer, 0, frame, 0, size);
-                            // create a simple GDI+ happy Bitmap
-                            //aBitmap = new Bitmap(new MemoryStream(frame));
-                            CurrentFrame = frame;
+                            CurrentFrame = new byte[size];
+                            // Copy the latest frame into `CurrentFrame`
+                            Array.Copy(imageBuffer, 0, CurrentFrame, 0, size);
+
                             // tell whoever's listening that we have a frame to draw
                             if (FrameReady != null)
-                                FrameReady(this, new FrameReadyEventArgs { FrameBuffer = CurrentFrame });
-                        //bitmap.Save("c:\\frame.gif", System.Drawing.Imaging.ImageFormat.Gif);
-                        //ProcessFrame(frame);
-                        // copy the leftover data to the start
-                        Array.Copy(buff, imageEnd, buff, 0, buff.Length - imageEnd);
+                                FrameReady(this, new FrameReadyEventArgs());
+                            // copy the leftover data to the start
+                            Array.Copy(buff, imageEnd, buff, 0, buff.Length - imageEnd);
 
                             // fill the remainder of the buffer with new data and start over
                             byte[] temp = br.ReadBytes(imageEnd);
@@ -217,45 +213,11 @@ public class MjpegProcessor {
             return;
         }
     }
-    /*private void ProcessFrame(byte[] frame)
-    {
-        CurrentFrame = frame;
-
-        /*DanEdit// no Application.Current == WinForms
-        if (Application.Current != null)
-        {*
-        // get it on the UI thread
-        _context.Post(delegate
-        {
-            // create a new BitmapImage from the JPEG bytes
-            BitmapImage = new BitmapImage();
-            BitmapImage.BeginInit();
-            BitmapImage.StreamSource = new MemoryStream(frame);
-            BitmapImage.EndInit();
-
-            // tell whoever's listening that we have a frame to draw
-            if (FrameReady != null)
-                FrameReady(this, new FrameReadyEventArgs { FrameBuffer = CurrentFrame, BitmapImage = BitmapImage });
-        }, null);
-        /*DanEdit}
-        else
-        {
-            _context.Post(delegate
-            {
-                // create a simple GDI+ happy Bitmap
-                Bitmap = new Bitmap(new MemoryStream(frame));
-
-                // tell whoever's listening that we have a frame to draw
-                if (FrameReady != null)
-                    FrameReady(this, new FrameReadyEventArgs { FrameBuffer = CurrentFrame, Bitmap = Bitmap });
-            }, null);
-        }
-    }*/
 }
 
 public class FrameReadyEventArgs : EventArgs
 {
-    public byte[] FrameBuffer;
+    //public byte[] FrameBuffer;
     //public BitmapImage BitmapImage;
 }
 
@@ -265,38 +227,3 @@ public sealed class ErrorEventArgs : EventArgs
     public string Message { get; set; }
     public int ErrorCode { get; set; }
 }
-/*DanEditnamespace MjpegProcessor
-{
-    public class MjpegDecoder
-    {
-        
-
-    static class Extensions
-    {
-        public static int Find(this byte[] buff, byte[] search)
-        {
-            // enumerate the buffer but don't overstep the bounds
-            for (int start = 0; start < buff.Length - search.Length; start++)
-            {
-                // we found the first character
-                if (buff[start] == search[0])
-                {
-                    int next;
-
-                    // traverse the rest of the bytes
-                    for (next = 1; next < search.Length; next++)
-                    {
-                        // if we don't match, bail
-                        if (buff[start + next] != search[next])
-                            break;
-                    }
-
-                    if (next == search.Length)
-                        return start;
-                }
-            }
-            // not found
-            return -1;
-        }
-    }
-}*/
