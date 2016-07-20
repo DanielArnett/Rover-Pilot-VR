@@ -150,7 +150,6 @@ public class MjpegProcessor {
 
             while (_streamActive)
             {
-                print("Receiving Frame");
                 // find the JPEG header
                 int imageStart = FindBytes(buff, JpegHeader);// buff.Find(JpegHeader);
 
@@ -173,9 +172,10 @@ public class MjpegProcessor {
                             Array.Copy(buff, 0, imageBuffer, size, imageEnd);
                             size += imageEnd;
 
-                            CurrentFrame = new byte[size];
                             // Copy the latest frame into `CurrentFrame`
-                            Array.Copy(imageBuffer, 0, CurrentFrame, 0, size);
+                            byte[] frame = new byte[size];
+                            Array.Copy(imageBuffer, 0, frame, 0, size);
+                            CurrentFrame = frame;
 
                             // tell whoever's listening that we have a frame to draw
                             if (FrameReady != null)
